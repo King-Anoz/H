@@ -4,7 +4,9 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as http';
+import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
 
 class DownloadProvider with ChangeNotifier {
   final YoutubeExplode _yt = YoutubeExplode();
@@ -76,6 +78,11 @@ class DownloadProvider with ChangeNotifier {
       await fileStream.flush();
       await fileStream.close();
 
+      // Share the video file
+      if (Platform.isIOS) {
+        await Share.shareXFiles([XFile(filePath)], text: video.title);
+      }
+
       _isDownloading = false;
       _progress = 1.0;
       _currentTask = 'تم التحميل بنجاح!';
@@ -89,8 +96,6 @@ class DownloadProvider with ChangeNotifier {
     }
   }
 
-  // Add similar methods for Instagram and TikTok...
-  
   @override
   void dispose() {
     _yt.close();

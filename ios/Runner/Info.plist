@@ -24,6 +24,25 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>نحتاج إلى الوصول إلى مكتبة الصور لحفظ مقاطع الفيديو المحملة في معرض الصور الخاص بك</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>نحتاج إلى هذا الإذن لحفظ مقاطع الفيديو المحملة في معرض الصور الخاص بك</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>instagram</string>
+		<string>youtube</string>
+		<string>tiktok</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -45,20 +64,6 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>نحتاج إلى الوصول إلى مكتبة الصور لحفظ مقاطع الفيديو المحملة</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>نحتاج إلى الوصول إلى مكتبة الصور لحفظ مقاطع الفيديو المحملة</string>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
-	<key>UIFileSharingEnabled</key>
-	<true/>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>instagram</string>
-		<string>youtube</string>
-		<string>tiktok</string>
-	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>
