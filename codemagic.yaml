@@ -1,0 +1,78 @@
+workflows:
+  ios-workflow:
+    name: iOS Release Build
+    instance_type: mac_mini_m1
+    max_build_duration: 120
+    environment:
+      ios_signing:
+        distribution_type: ad_hoc
+        bundle_identifier: com.kinganoz.videodownloader
+      vars:
+        XCODE_WORKSPACE: "Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
+        BUNDLE_ID: "com.kinganoz.videodownloader"
+        XCODE_CONFIG: "Release"
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    cache:
+      cache_paths:
+        - ~/.pub-cache
+        - ~/.cocoapods
+    triggering:
+      events:
+        - push
+        - tag
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter clean
+          flutter pub get
+      - name: Install pods
+        script: |
+          cd ios
+          pod install
+      - name: Set up keychain
+        script: |
+          keychain initialize
+      - name: Fetch signing files
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_ADHOC --create
+      - name: Build iOS
+        script: |
+          flutter build ios --release
+          cd ios
+          xcodebuild -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath build/Runner.xcarchive \
+            archive
+          xcodebuild -exportArchive \
+            -archivePath build/Runner.xcarchive \
+            -exportOptionsPlist exportOptions.plist \
+            -exportPath build/ios/ipa
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - build/ios/**/*.app
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      email:
+        recipients:
+          - your.email@example.com
+        notify:
+          success: true
+          failure: true
+      scripts:
+        - name: Send to Firebase App Distribution
+          script: |
+            if [ -f "build/ios/ipa/Runner.ipa" ]
+            then
+              echo "Found IPA file"
+              # Add Firebase distribution command here if needed
+            else
+              echo "No IPA file found"
+            fi
