@@ -5,7 +5,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'dart:html' as html;
 
 class DownloadProvider with ChangeNotifier {
   final YoutubeExplode _yt = YoutubeExplode();
@@ -17,6 +16,16 @@ class DownloadProvider with ChangeNotifier {
   double get progress => _progress;
   String get currentTask => _currentTask;
 
+  Future<String> get _downloadPath async {
+    if (Platform.isIOS) {
+      final directory = await getApplicationDocumentsDirectory();
+      return directory.path;
+    } else {
+      final directory = await getExternalStorageDirectory();
+      return directory?.path ?? (await getApplicationDocumentsDirectory()).path;
+    }
+  }
+
   Future<void> downloadYouTubeVideo(String url, String quality) async {
     try {
       _isDownloading = true;
@@ -24,11 +33,17 @@ class DownloadProvider with ChangeNotifier {
       _currentTask = 'جاري تحليل الرابط...';
       notifyListeners();
 
-      // Web version doesn't need storage permission
       if (!kIsWeb) {
-        var status = await Permission.storage.request();
-        if (!status.isGranted) {
-          throw Exception('تم رفض إذن التخزين');
+        if (Platform.isIOS) {
+          var status = await Permission.photos.request();
+          if (!status.isGranted) {
+            throw Exception('تم رفض إذن الوصول إلى الصور');
+          }
+        } else {
+          var status = await Permission.storage.request();
+          if (!status.isGranted) {
+            throw Exception('تم رفض إذن التخزين');
+          }
         }
       }
 
@@ -36,38 +51,30 @@ class DownloadProvider with ChangeNotifier {
       var video = await _yt.videos.get(url);
       var manifest = await _yt.videos.streamsClient.getManifest(url);
       var streamInfo = quality == 'high' 
-          ? manifest.muxed.first
-          : manifest.muxed.last;
+          ? manifest.muxed.withHighestBitrate()
+          : manifest.muxed.withLowestBitrate();
 
       _currentTask = 'جاري التحميل...';
       notifyListeners();
 
-      if (kIsWeb) {
-        // Web implementation
-        _currentTask = 'عذراً، التحميل غير متاح في نسخة الويب';
+      final downloadDir = await _downloadPath;
+      var filePath = '$downloadDir/${video.title}.mp4';
+      var file = File(filePath);
+      var fileStream = file.openWrite();
+
+      var stream = await _yt.videos.streamsClient.get(streamInfo);
+      var len = streamInfo.size.totalBytes;
+      var count = 0;
+
+      await for (final data in stream) {
+        count += data.length;
+        _progress = count / len;
+        fileStream.add(data);
         notifyListeners();
-        throw Exception('التحميل غير متاح في نسخة الويب. يرجى استخدام نسخة سطح المكتب.');
-      } else {
-        // Desktop/Mobile implementation
-        var dir = await getExternalStorageDirectory();
-        var filePath = '${dir!.path}/${video.title}.mp4';
-        var file = File(filePath);
-        var fileStream = file.openWrite();
-
-        var stream = await _yt.videos.streamsClient.get(streamInfo);
-        var len = streamInfo.size.totalBytes;
-        var count = 0;
-
-        await for (final data in stream) {
-          count += data.length;
-          _progress = count / len;
-          fileStream.add(data);
-          notifyListeners();
-        }
-
-        await fileStream.flush();
-        await fileStream.close();
       }
+
+      await fileStream.flush();
+      await fileStream.close();
 
       _isDownloading = false;
       _progress = 1.0;
