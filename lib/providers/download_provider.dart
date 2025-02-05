@@ -52,9 +52,11 @@ class DownloadProvider with ChangeNotifier {
       // Get video metadata
       var video = await _yt.videos.get(url);
       var manifest = await _yt.videos.streamsClient.getManifest(url);
-      var streamInfo = quality == 'high' 
-          ? manifest.muxed.withHighestBitrate()
-          : manifest.muxed.withLowestBitrate();
+      
+      // Get the appropriate stream
+      var streamInfo = quality == 'high'
+          ? manifest.muxed.sortByBitrate().last // Get highest bitrate
+          : manifest.muxed.sortByBitrate().first; // Get lowest bitrate
 
       _currentTask = 'جاري التحميل...';
       notifyListeners();
